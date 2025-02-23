@@ -21,6 +21,8 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 RUN ollama pull deepseek-r1:1.5b
 
+RUN ollama pull nomic-embed-text:latest
+
 RUN ollama serve
 
 # Expose Streamlit default port

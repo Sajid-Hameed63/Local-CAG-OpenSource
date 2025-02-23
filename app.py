@@ -1,4 +1,8 @@
-import os
+"""
+Python script to test the CAG (Cache Augmented Generation) system. Using the local DeepSeek-R1:1.5B model, this system generates responses to user queries and caches them for future use. It leverages SQLite for exact match caching and ChromaDB for semantic search. The Google Generative AI Embeddings model is used to encode queries and responses for similarity comparison.
+"""
+
+os
 import sqlite3
 import hashlib
 import json
