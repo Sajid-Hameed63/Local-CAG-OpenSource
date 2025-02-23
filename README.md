@@ -41,11 +41,11 @@ Cache Augmented Generation (CAG) optimizes LLM-based applications by reducing re
 
 4. **Run the Streamlit app:**
    ```bash
-   streamlit run streamlit_cag_ollama.py
+   streamlit run streamlit_cag_ollama.py 
    ```
    Or 
    ```bash
-   streamlit run streamlit_cag_gemini.py
+   streamlit run streamlit_cag_gemini.py # create .env and add gemini API key as GOOGLE_GEMINI_API_KEY
    ```
 
 ## Usage
