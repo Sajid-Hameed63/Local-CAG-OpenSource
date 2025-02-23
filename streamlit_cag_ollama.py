@@ -1,6 +1,6 @@
-# """
-# Streamlit app to test the CAG (Cache Augmented Generation) system. Using the local DeepSeek-R1:1.5B model, this system generates responses to user queries and caches them for future use. It leverages SQLite for exact match caching and ChromaDB for semantic search. The Ollama Embeddings model is used to encode queries and responses for similarity comparison.
-# """
+"""
+Streamlit app to test the CAG (Cache Augmented Generation) system. Using the local DeepSeek-R1:1.5B model, this system generates responses to user queries and caches them for future use. It leverages SQLite for exact match caching and ChromaDB for semantic search. The Ollama Embeddings model is used to encode queries and responses for similarity comparison.
+"""
 
 import os
 import sqlite3
@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Constants
-SIMILARITY_THRESHOLD = 0.70  # Lowered to avoid incorrect cache hits
+SIMILARITY_THRESHOLD = 750  # Lowered to avoid incorrect cache hits
 CACHE_DB = "cache.db"
 CHROMA_DB_PATH = "./chroma_db"
 
@@ -102,7 +102,7 @@ def retrieve_similar_response(prompt):
     
     print(f"🔍 Best Match: {best_match} with Similarity Score: {similarity_score}")
     
-    if similarity_score and similarity_score[0] < 10.0:  # Adjusted scaling to avoid huge distances
+    if similarity_score and similarity_score[0] >= SIMILARITY_THRESHOLD:  # Adjusted scaling to avoid huge distances
         return best_match[0]  # ✅ Return best match if similarity score is reasonable
     return None  # No sufficiently similar match found
 
@@ -164,3 +164,5 @@ for chat in st.session_state.conversation:
     st.markdown("---")
 
 st.caption("🚀 Built with DeepSeek-R1, ChromaDB, and Streamlit")
+
+
