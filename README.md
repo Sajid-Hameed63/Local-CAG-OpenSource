@@ -1,94 +1,65 @@
-# Chat with Multiple PDFs 📚
+# Cache Augmented Generation (CAG)
 
-This is a **Streamlit-based application** that allows users to upload multiple PDF files and ask questions about their content using **Google Gemini AI** and **FAISS for vector storage**.
+Cache Augmented Generation (CAG) optimizes LLM-based applications by reducing redundant API requests through caching, leading to faster response times and improved efficiency.
 
 ## Features
-- 📄 **Upload multiple PDFs** and process their text.
-- 🧠 **Generate embeddings** using Google Gemini AI.
-- 🔍 **Store and retrieve document embeddings** with FAISS.
-- 🤖 **Answer user queries** based on document context.
-- 💾 **Persistent document index** to avoid reprocessing.
-- 🗨️ **Chat history storage** for better interaction.
 
-## Deployment
-🚀 This application is **deployed on Hugging Face Spaces** for easy access and usage. You can try it out [here](https://huggingface.co/spaces/sajidhameed63/Chat-with-Your-PDFs).
+- **Efficient Caching:** Reduces API calls to LLMs by storing responses and reusing them for similar queries.
+- **Multiple Embedding Options:** Supports both free and local embeddings.
+- **Database Storage:** Uses SQLite3 and ChromaDB for caching and retrieval.
 
-## Docker Support
-You can also run this application using **Docker**:
+## Implementations
 
-### Build the Docker Image
-```sh
-sudo docker build -t rag-chat-multiple-pdfs:v1.0 .
-```
+### 1. **Streamlit App with Ollama DeepSeek & Ollama Embeddings (100% free & local)**
+   - **LLM:** Ollama DeepSeek
+   - **Embeddings:** Ollama embeddings 
+   - **Databases:** SQLite3 & ChromaDB
 
-### Run the Container
-```sh
-docker run --env-file .env -p 8500:8500 rag-chat-multiple-pdfs:v1.0
-```
+### 2. **Streamlit App with Ollama DeepSeek & Google Embeddings**
+   - **LLM:** Ollama DeepSeek
+   - **Embeddings:** Google embeddings (via free Gemini API keys)
+   - **Databases:** SQLite3 & ChromaDB
 
-### Pull from Docker Hub
-Alternatively, you can pull the pre-built image from Docker Hub:
-```sh
-docker pull sajidhameed63/rag-chat-multiple-pdfs:v1.0
-```
+## Setup & Installation
 
-## Requirements
-Ensure you have the following installed:
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Sajid-Hameed63/Local-CAG-OpenSource
+   cd Local-CAG-OpenSource
+   ```
 
-- Python 3.8+
-- Streamlit
-- PyPDF2
-- LangChain
-- FAISS
-- Google Gemini API Key (Required for embeddings and chat model)
-- dotenv (for managing API keys)
+2. **Create a virtual environment and activate it:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows, use `venv\Scripts\activate`
+   ```
 
-## Installation
-```sh
-# Clone the repository
-git clone https://github.com/Sajid-Hameed63/Chat-Multiple-PDFs.git
-cd Chat-Multiple-PDFs
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-```
-
-## Setup
-1. **Get a Google Gemini API Key**
-   - Visit [Google AI Studio](https://aistudio.google.com/) and generate an API key.
-   - Create a `.env` file in the root directory and add:
-     ```env
-     GOOGLE_GEMINI_API_KEY=your_api_key_here
-     ```
-
-2. **Run the application**
-   ```sh
-   streamlit run app.py
+4. **Run the Streamlit app:**
+   ```bash
+   streamlit run streamlit_cag_ollama.py
+   ```
+   Or 
+   ```bash
+   streamlit run streamlit_cag_gemini.py
    ```
 
 ## Usage
-1. Upload PDF files in the sidebar.
-2. Click **Process PDFs** to extract text and generate embeddings.
-3. Ask questions about your documents using the chat input.
-4. View conversation history and clear chat if needed.
 
-## Troubleshooting
-- **PDF processing failed?** Ensure the files contain selectable text.
-- **Embedding errors?** Check if your Google API key is valid.
-- **Vector store not found?** Make sure PDFs are processed first.
+- Input your query in the UI.
+- The system checks if a cached response exists.
+- If cached, it retrieves the response instantly.
+- If not cached, it fetches a new response, stores it, and returns it.
 
-## Future Improvements
-- Multi-user session handling.
-- Support for scanned PDFs (OCR-based extraction).
-- Integration with other LLMs (e.g., OpenAI GPT).
+## Contributing
+
+Feel free to contribute by submitting issues or pull requests.
 
 ## License
-MIT License
 
----
-**Developed by Sajid Hameed** 🚀
+This project is licensed under the MIT License.
 
