@@ -1,6 +1,6 @@
-"""
-Python script to test the CAG (Cache Augmented Generation) system. Using the local DeepSeek-R1:1.5B model, this system generates responses to user queries and caches them for future use. It leverages SQLite for exact match caching and ChromaDB for semantic search. The Google Generative AI Embeddings model is used to encode queries and responses for similarity comparison.
-"""
+# """
+# Streamlit app to test the CAG (Cache Augmented Generation) system. Using the local DeepSeek-R1:1.5B model, this system generates responses to user queries and caches them for future use. It leverages SQLite for exact match caching and ChromaDB for semantic search. The Ollama Embeddings model is used to encode queries and responses for similarity comparison.
+# """
 
 import os
 import sqlite3
@@ -10,14 +10,13 @@ import ollama  # type: ignore
 import chromadb  # type: ignore
 import re
 import streamlit as st
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Constants
-SIMILARITY_THRESHOLD = 0.85
+SIMILARITY_THRESHOLD = 0.70  # Lowered to avoid incorrect cache hits
 CACHE_DB = "cache.db"
 CHROMA_DB_PATH = "./chroma_db"
 
@@ -63,23 +62,28 @@ def update_exact_cache(prompt, response):
 chroma_client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 collection = chroma_client.get_or_create_collection(name="cached_responses")
 
-# Set Up Google Embeddings
-embedding_model = GoogleGenerativeAIEmbeddings(model="models/embedding-001", 
-            google_api_key=os.getenv("GOOGLE_GEMINI_API_KEY"))
+# Set Up Ollama Embeddings
+def embed_text_with_ollama(text):
+    """Generate embeddings using an Ollama model."""
+    response = ollama.embeddings(model="nomic-embed-text", prompt=text)
+    return response["embedding"]
 
 def store_response_embedding(prompt, response):
-    """Store new response in ChromaDB with embeddings."""
-    embedding = embedding_model.embed_query(prompt)
-    collection.add(
-        embeddings=[embedding],
-        documents=[response],
-        metadatas=[{"prompt": prompt}],
-        ids=[get_cache_key(prompt)]
-    )
+    """Store new response in ChromaDB with embeddings, filtering invalid ones."""
+    embedding = embed_text_with_ollama(prompt)
+    if "hello! how can i assist you today?" not in response.lower():  # Avoid storing generic responses
+        collection.add(
+            embeddings=[embedding],
+            documents=[response],
+            metadatas=[{"prompt": prompt}],
+            ids=[get_cache_key(prompt)]
+        )
+    else:
+        print("⚠️ Generic response detected. Not storing in ChromaDB.")
 
 def retrieve_similar_response(prompt):
-    """Find the most relevant cached response using embeddings."""
-    query_embedding = embedding_model.embed_query(prompt)
+    """Find the most relevant cached response using embeddings, ensuring scaled distances."""
+    query_embedding = embed_text_with_ollama(prompt)
     all_documents = collection.get()["documents"]
     n_results = min(3, len(all_documents)) if all_documents else 1  # Ensure n_results is at least 1
     results = collection.query(
@@ -87,22 +91,36 @@ def retrieve_similar_response(prompt):
         n_results=n_results,
         include=["documents", "distances"]
     )
+    
+    print(f"🔍 Querying ChromaDB for similar responses to: {prompt}")
+    print(f"🔍 Found results: {results}")
+    
     if not results["documents"] or not results["documents"][0]:
         return None  # No matches found
     best_match = results["documents"][0]
     similarity_score = results["distances"][0]
-    if similarity_score and similarity_score[0] >= SIMILARITY_THRESHOLD:
-        return best_match[0]  # ✅ Return best match if above threshold
+    
+    print(f"🔍 Best Match: {best_match} with Similarity Score: {similarity_score}")
+    
+    if similarity_score and similarity_score[0] < 10.0:  # Adjusted scaling to avoid huge distances
+        return best_match[0]  # ✅ Return best match if similarity score is reasonable
     return None  # No sufficiently similar match found
 
 def generate_response(prompt):
     """Fetch response from cache or generate using DeepSeek."""
+    print(f"🔎 Checking exact cache for: {prompt}")
     cached_response = check_exact_cache(prompt)
     if cached_response:
+        print("✅ Cache HIT (Exact Match) - Returning from SQLite")
         return cached_response  # Cache HIT (Exact Match)
+    
+    print(f"🔍 Checking semantic cache for: {prompt}")
     similar_response = retrieve_similar_response(prompt)
     if similar_response:
+        print("✅ Cache HIT (Semantic Match) - Returning from ChromaDB")
         return similar_response  # Cache HIT (Semantic Match)
+    
+    print("❌ Cache MISS - Generating new response from DeepSeek-R1:1.5B")
     try:
         response = ollama.chat(
             model="deepseek-r1:1.5b",
@@ -110,10 +128,14 @@ def generate_response(prompt):
             stream=False
         )
         raw_text = response["message"]["content"].strip()
+        
+        print(f"🤖 Generated Response: {raw_text}")
+        
         update_exact_cache(prompt, raw_text)
         store_response_embedding(prompt, raw_text)
         return raw_text
     except Exception as e:
+        print(f"❌ Error generating response: {e}")
         return "I'm sorry, but I couldn't process that request."
 
 # Streamlit UI
